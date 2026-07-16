@@ -1,109 +1,70 @@
-/**
- * @module roundTrip
- *
- * Handles re-rendering of ExcaliMath elements when loading a saved
- * .excalidraw file. Scans all elements for ExcaliMath customData,
- * then regenerates the SVG image files so they display correctly.
- *
- * This is needed because Excalidraw stores image elements as references
- * to file entries (by fileId), but the actual file data (SVG data URLs)
- * is not always persisted. This module rebuilds them from metadata.
- */
+/** Regenerates ExcaliMath SVG file entries from Typst or graph metadata. */
 
-import { isExcalimathElement, getExcalimathMetadata, svgToDataUrl, createFileEntry } from "./elementFactory";
-import { renderLatexToSvg } from "../plugins/equation/renderer";
+import { createFileEntry, getExcalimathMetadata, isExcalimathElement, svgToDataUrl } from "./elementFactory";
+import { renderTypstToSvg } from "../plugins/equation/renderer";
 
-/**
- * Scan all elements in a scene and regenerate file entries for any
- * ExcaliMath-managed image elements. Call this after loading a
- * .excalidraw file to restore equation and graph rendering.
- *
- * @returns Array of file entries to pass to excalidrawAPI.addFiles()
- */
-export function restoreExcalimathFiles(
-  elements: Array<{ id: string; type: string; fileId?: string; customData?: Record<string, unknown> }>
-): Array<{ id: string; dataURL: string; mimeType: string; created: number; lastRetrieved: number }> {
-  const files: Array<{ id: string; dataURL: string; mimeType: string; created: number; lastRetrieved: number }> = [];
+export interface RestorableElement {
+  id: string;
+  type: string;
+  fileId?: string;
+  customData?: Record<string, unknown>;
+}
 
-  for (const el of elements) {
-    if (el.type !== "image" || !isExcalimathElement(el) || !el.fileId) continue;
-
-    const meta = getExcalimathMetadata(el);
-    if (!meta) continue;
-
-    if (meta.excalimath_type === "equation" && meta.excalimath_latex) {
-      try {
-        const result = renderLatexToSvg(meta.excalimath_latex);
-        const dataUrl = svgToDataUrl(result.svg);
-        const { fileEntry } = createFileEntry(dataUrl, el.fileId);
-        files.push(fileEntry);
-      } catch {
-        // Skip elements that fail to re-render
-      }
-    }
-
-    if (meta.excalimath_type === "graph" && meta.excalimath_graph_config) {
-      // Graph re-rendering is async (Plotly), so we store a placeholder
-      // and the actual re-render happens via restoreGraphFiles()
-      // For now, graphs that were saved with their SVG data URL intact
-      // will work. Full async restoration is handled separately.
-    }
-  }
-
-  return files;
+export interface RestoredFileEntry {
+  id: string;
+  dataURL: string;
+  mimeType: string;
+  created: number;
+  lastRetrieved: number;
 }
 
 /**
- * Async version that also restores graph elements (requires Plotly).
- * Call this after the initial sync restore for full fidelity.
+ * Restore every native Typst equation and graph asynchronously.
+ * Legacy `excalimath_latex` metadata is intentionally ignored.
  */
 export async function restoreExcalimathFilesAsync(
-  elements: Array<{ id: string; type: string; fileId?: string; customData?: Record<string, unknown> }>
-): Promise<Array<{ id: string; dataURL: string; mimeType: string; created: number; lastRetrieved: number }>> {
-  // Start with sync equation restores
-  const files = restoreExcalimathFiles(elements);
+  elements: RestorableElement[],
+): Promise<RestoredFileEntry[]> {
+  const files: RestoredFileEntry[] = [];
 
-  // Lazily import graph renderer to avoid loading Plotly if not needed
-  for (const el of elements) {
-    if (el.type !== "image" || !isExcalimathElement(el) || !el.fileId) continue;
-
-    const meta = getExcalimathMetadata(el);
-    if (!meta || meta.excalimath_type !== "graph" || !meta.excalimath_graph_config) continue;
+  for (const element of elements) {
+    if (element.type !== "image" || !element.fileId || !isExcalimathElement(element)) continue;
+    const metadata = getExcalimathMetadata(element);
+    if (!metadata) continue;
 
     try {
-      const config = JSON.parse(meta.excalimath_graph_config);
-      const { renderGraphToSvg } = await import("../plugins/graph/plotRenderer");
-      const result = await renderGraphToSvg(config);
-      const dataUrl = svgToDataUrl(result.svg);
-      const { fileEntry } = createFileEntry(dataUrl, el.fileId);
-      files.push(fileEntry);
+      if (metadata.excalimath_type === "equation" && metadata.excalimath_typst) {
+        const result = await renderTypstToSvg(metadata.excalimath_typst);
+        const { fileEntry } = createFileEntry(svgToDataUrl(result.svg), element.fileId);
+        files.push(fileEntry);
+      } else if (metadata.excalimath_type === "graph" && metadata.excalimath_graph_config) {
+        const config = JSON.parse(metadata.excalimath_graph_config);
+        const { renderGraphToSvg } = await import("../plugins/graph/plotRenderer");
+        const result = await renderGraphToSvg(config);
+        const { fileEntry } = createFileEntry(svgToDataUrl(result.svg), element.fileId);
+        files.push(fileEntry);
+      }
     } catch {
-      // Skip elements that fail to re-render
+      // One invalid element must not prevent the rest of the scene from loading.
     }
   }
 
   return files;
 }
 
-/**
- * Extract all ExcaliMath metadata from a scene's elements.
- * Useful for serialisation or inspection.
- */
 export function extractExcalimathData(
-  elements: Array<{ id: string; customData?: Record<string, unknown> }>
+  elements: Array<{ id: string; customData?: Record<string, unknown> }>,
 ): Array<{ elementId: string; type: string; data: Record<string, unknown> }> {
   const results: Array<{ elementId: string; type: string; data: Record<string, unknown> }> = [];
-
-  for (const el of elements) {
-    if (!isExcalimathElement(el)) continue;
-    const meta = getExcalimathMetadata(el);
-    if (!meta) continue;
+  for (const element of elements) {
+    if (!isExcalimathElement(element)) continue;
+    const metadata = getExcalimathMetadata(element);
+    if (!metadata) continue;
     results.push({
-      elementId: el.id,
-      type: meta.excalimath_type,
-      data: meta as unknown as Record<string, unknown>,
+      elementId: element.id,
+      type: metadata.excalimath_type,
+      data: metadata as unknown as Record<string, unknown>,
     });
   }
-
   return results;
 }

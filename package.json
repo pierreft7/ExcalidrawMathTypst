@@ -1,8 +1,8 @@
 {
   "name": "excalimath",
   "private": true,
-  "version": "1.1.0",
-  "description": "A math-ready whiteboard companion for Excalidraw — LaTeX equations, function graphs, and STEM shape libraries.",
+  "version": "2.0.0",
+  "description": "A Typst-native math whiteboard companion for Excalidraw — equations, function graphs, and STEM shape libraries.",
   "license": "MIT",
   "author": "Tamer — ITWorx EdTech",
   "repository": {
@@ -12,8 +12,7 @@
   "keywords": [
     "excalidraw",
     "math",
-    "latex",
-    "katex",
+    "typst",
     "whiteboard",
     "education",
     "stem"
@@ -27,9 +26,10 @@
     "dev": "npm run dev --workspace=apps/demo",
     "build": "npm run build --workspace=packages/core && npm run build --workspace=apps/demo",
     "build:core": "npm run build --workspace=packages/core",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "npm run typecheck --workspace=packages/core && tsc --noEmit -p apps/demo/tsconfig.json",
+    "test": "npm run test --workspace=packages/core"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }

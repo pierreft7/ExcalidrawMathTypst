@@ -10,8 +10,8 @@
 export interface ExcalimathMetadata {
   excalimath_type: "equation" | "graph";
   excalimath_source: string;
-  /** For equations: the raw LaTeX string */
-  excalimath_latex?: string;
+  /** For equations: native Typst math content (without surrounding `$` delimiters). */
+  excalimath_typst?: string;
   /** For graphs: the serialised plot config JSON */
   excalimath_graph_config?: string;
 }

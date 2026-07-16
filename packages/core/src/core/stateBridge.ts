@@ -16,7 +16,7 @@ export type { ExcalimathMetadata };
 
 export interface SelectedEquation {
   elementId: string;
-  latex: string;
+  typst: string;
 }
 
 export interface SelectedGraph {
@@ -37,10 +37,10 @@ export function getSelectedExcalimathElement(
   const meta = getExcalimathMetadata(el);
   if (!meta) return null;
 
-  if (meta.excalimath_type === "equation" && meta.excalimath_latex) {
+  if (meta.excalimath_type === "equation" && meta.excalimath_typst) {
     return {
       type: "equation",
-      data: { elementId: el.id, latex: meta.excalimath_latex },
+      data: { elementId: el.id, typst: meta.excalimath_typst },
     };
   }
 

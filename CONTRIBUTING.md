@@ -45,8 +45,8 @@ This is a monorepo managed with npm workspaces:
 | `npm run dev` | Start the demo app in dev mode (hot reload) |
 | `npm run build` | Build all packages (core first, then demo) |
 | `npm run build:core` | Build only the core package |
-| `npm run lint` | Run ESLint across the project |
 | `npm run typecheck` | Run TypeScript type checking |
+| `npm test` | Run the core regression tests |
 
 ### Typical workflow
 
@@ -65,14 +65,14 @@ packages/core/src/
 │   ├── stateBridge.ts     # Click-to-edit: detects selected ExcaliMath elements
 │   └── types.ts           # Shared TypeScript types
 ├── plugins/
-│   ├── equation/          # LaTeX equation plugin (KaTeX)
+│   ├── equation/          # Native Typst equation compiler and renderer
 │   ├── graph/             # Function graph plugin (Plotly + mathjs)
 │   └── geometry/          # Shape library plugin
 │       ├── packs/         # Individual shape pack definitions
 │       └── registry.ts    # Pack loader + element converter
 └── ui/                    # React UI components
     ├── ExcaliMath.tsx      # Main wrapper (toolbar + panel orchestration)
-    ├── EquationPanel.tsx   # LaTeX editor sidebar
+    ├── EquationPanel.tsx   # Typst math editor sidebar
     ├── GraphPanel.tsx      # Function plotter sidebar
     └── LibraryPanel.tsx    # Shape browser sidebar
 ```

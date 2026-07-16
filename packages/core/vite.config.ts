@@ -3,7 +3,11 @@ import dts from "vite-plugin-dts";
 import { resolve } from "path";
 
 export default defineConfig({
+  base: "./",
   plugins: [dts({ rollupTypes: true })],
+  worker: {
+    format: "es",
+  },
   build: {
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
@@ -16,7 +20,6 @@ export default defineConfig({
         "react-dom",
         "react/jsx-runtime",
         "@excalidraw/excalidraw",
-        "katex",
         "mathjs",
         "plotly.js-dist-min",
       ],

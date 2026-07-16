@@ -1,7 +1,7 @@
 {
   "name": "@excalimath/core",
-  "version": "1.1.0",
-  "description": "Math companion plugin for Excalidraw — equations, graphs, and shape libraries.",
+  "version": "2.0.0",
+  "description": "Typst-native math companion plugin for Excalidraw — equations, graphs, and shape libraries.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,7 +19,8 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "tsc && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "@excalidraw/excalidraw": ">=0.17.0",
@@ -27,17 +28,23 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "katex": "^0.16.0",
+    "@fontsource/libertinus-serif": "^5.2.1",
+    "@myriaddreamin/typst-ts-renderer": "^0.7.0",
+    "@myriaddreamin/typst-ts-web-compiler": "^0.7.0",
+    "@myriaddreamin/typst.ts": "^0.7.0",
     "mathjs": "^15.1.1",
     "plotly.js-dist-min": "^3.5.0"
   },
   "devDependencies": {
-    "@types/katex": "^0.16.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/plotly.js-dist-min": "^2.3.4",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "jsdom": "^29.0.0",
     "typescript": "^5.4.0",
     "vite": "^5.4.0",
-    "vite-plugin-dts": "^3.9.0"
+    "vite-plugin-dts": "^3.9.0",
+    "vitest": "^4.0.0"
   }
 }

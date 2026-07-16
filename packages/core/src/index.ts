@@ -12,15 +12,17 @@ export {
 } from "./core/elementFactory";
 export { getSelectedExcalimathElement } from "./core/stateBridge";
 export {
-  restoreExcalimathFiles,
   restoreExcalimathFilesAsync,
   extractExcalimathData,
 } from "./core/roundTrip";
+export type { RestorableElement, RestoredFileEntry } from "./core/roundTrip";
 
 // ── Equation plugin ──
 export {
-  renderLatexToSvg,
-  validateLatex,
+  renderTypstToSvg,
+  typstEquationDocument,
+  TypstRenderError,
+  TypstRenderSupersededError,
 } from "./plugins/equation/renderer";
 export {
   expressionLibrary,
@@ -65,6 +67,7 @@ export type {
 } from "./core/types";
 export type { ExpressionEntry } from "./plugins/equation/expressionLibrary";
 export type { RenderResult } from "./plugins/equation/renderer";
+export type { EquationRenderer, TypstDiagnostic } from "./plugins/equation/renderer";
 export type {
   FunctionTrace,
   DataTrace,

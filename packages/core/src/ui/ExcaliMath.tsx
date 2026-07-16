@@ -20,6 +20,7 @@ import { getTheme } from "./theme";
 import type { ExcalimathMetadata } from "../core/types";
 import type { GraphConfig } from "../plugins/graph/types";
 import type { LibraryShape } from "../plugins/geometry/types";
+import type { EquationRenderer } from "../plugins/equation/renderer";
 
 export type ActiveTab = "equation" | "graph" | "library" | null;
 
@@ -51,6 +52,9 @@ export interface ExcaliMathProps {
    * update, delete). Receives the full scene data for persistence.
    */
   onSave?: (data: ExcalimathSceneData) => void;
+
+  /** Reuse a host application's Typst pipeline instead of the built-in worker. */
+  renderEquation?: EquationRenderer;
 }
 
 export function ExcaliMath({
@@ -59,13 +63,12 @@ export function ExcaliMath({
   theme = "auto",
   initialData,
   onSave,
+  renderEquation,
 }: ExcaliMathProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>(null);
-  const [editingLatex, setEditingLatex] = useState<string | null>(null);
+  const [editingTypst, setEditingTypst] = useState<string | null>(null);
   const [editingGraphConfig, setEditingGraphConfig] = useState<GraphConfig | null>(null);
   const editingElementIdRef = useRef<string | null>(null);
-  const restoredRef = useRef(false);
-
   // ── Theme resolution ──
   const excalidrawTheme = excalidrawAPI?.getAppState?.()?.theme;
   const isDark = theme === "auto"
@@ -224,13 +227,13 @@ export function ExcaliMath({
   const handleToggle = useCallback(() => {
     if (isOpen) {
       setActiveTab(null);
-      setEditingLatex(null);
+      setEditingTypst(null);
       setEditingGraphConfig(null);
       editingElementIdRef.current = null;
     } else {
       const selected = getSelectedElement();
       if (selected?.type === "equation") {
-        setEditingLatex(selected.data.latex);
+        setEditingTypst(selected.data.typst);
         editingElementIdRef.current = selected.data.elementId;
         setActiveTab("equation");
       } else if (selected?.type === "graph") {
@@ -246,14 +249,14 @@ export function ExcaliMath({
   }, [isOpen, getSelectedElement, equationEnabled, graphEnabled]);
 
   const switchTab = useCallback((tab: ActiveTab) => {
-    setEditingLatex(null);
+    setEditingTypst(null);
     setEditingGraphConfig(null);
     editingElementIdRef.current = null;
 
     if (tab === "equation") {
       const selected = getSelectedElement();
       if (selected?.type === "equation") {
-        setEditingLatex(selected.data.latex);
+        setEditingTypst(selected.data.typst);
         editingElementIdRef.current = selected.data.elementId;
       }
     } else if (tab === "graph") {
@@ -272,13 +275,13 @@ export function ExcaliMath({
   // ── Insert handlers ──
 
   const handleInsertEquation = useCallback(
-    (latex: string, svg: string, width: number, height: number) => {
+    (typst: string, svg: string, width: number, height: number) => {
       upsertElement(svg, width, height, {
         excalimath_type: "equation",
-        excalimath_source: "equation-panel",
-        excalimath_latex: latex,
+        excalimath_source: "typst-equation-panel",
+        excalimath_typst: typst,
       });
-      setEditingLatex(null);
+      setEditingTypst(null);
     },
     [upsertElement]
   );
@@ -319,7 +322,7 @@ export function ExcaliMath({
 
   const handleClose = useCallback(() => {
     setActiveTab(null);
-    setEditingLatex(null);
+    setEditingTypst(null);
     setEditingGraphConfig(null);
     editingElementIdRef.current = null;
   }, []);
@@ -462,9 +465,10 @@ export function ExcaliMath({
               <EquationPanel
                 visible={true}
                 onInsert={handleInsertEquation}
-                editingLatex={editingLatex}
+                editingTypst={editingTypst}
                 onClose={handleClose}
                 isDark={isDark}
+                renderEquation={renderEquation}
               />
             )}
             {activeTab === "graph" && graphEnabled && (

@@ -1,4 +1,9 @@
-export { renderLatexToSvg, validateLatex } from "./renderer";
+export {
+  renderTypstToSvg,
+  typstEquationDocument,
+  TypstRenderError,
+  TypstRenderSupersededError,
+} from "./renderer";
 export {
   expressionLibrary,
   getCategories,

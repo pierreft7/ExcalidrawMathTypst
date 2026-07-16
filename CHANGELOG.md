@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-16
+
+### Changed
+- Replaced KaTeX and LaTeX equation authoring with native Typst math syntax.
+- Moved equation compilation to a Web Worker and render Typst vector artifacts as self-contained SVG.
+- Replaced `excalimath_latex` metadata with `excalimath_typst` and made round-trip restoration fully asynchronous.
+- Converted the visual toolbar and expression library to Typst-native snippets.
+
+### Fixed
+- Removed the KaTeX HTML/MathML dual-output path that duplicated preview math when the host did not load KaTeX CSS.
+- Packaged the Typst worker with relative asset URLs so consuming Vite applications include it correctly.
+
+### Removed
+- Removed KaTeX, its demo CDN stylesheet, `renderLatexToSvg`, `validateLatex`, and synchronous `restoreExcalimathFiles`.
+- Legacy LaTeX scene metadata is intentionally unsupported.
+
 ## [1.1.0] - 2026-04-05
 
 ### Added
