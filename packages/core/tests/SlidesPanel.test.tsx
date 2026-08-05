@@ -84,13 +84,23 @@ describe("slide sidebar", () => {
 describe("presentation controller", () => {
   afterEach(cleanup);
 
-  const createApi = () => ({
-    getSceneElements: vi.fn(() => slides),
-    getAppState: vi.fn(() => ({ theme: "light" })),
-    getFiles: vi.fn(() => ({})),
-    onChange: vi.fn(() => () => {}),
-    scrollToContent: vi.fn(),
-  });
+  // Excalidraw's onChange is a multi-subscriber emitter.
+  const createApi = () => {
+    const subscribers: Array<(elements: readonly unknown[], appState?: unknown) => void> = [];
+    return {
+      getSceneElements: vi.fn(() => slides),
+      getAppState: vi.fn(() => ({ theme: "light" })),
+      getFiles: vi.fn(() => ({})),
+      onChange: vi.fn((callback: (elements: readonly unknown[], appState?: unknown) => void) => {
+        subscribers.push(callback);
+        return () => {};
+      }),
+      emitSceneChange: (elements: readonly unknown[], appState?: unknown) => {
+        for (const callback of subscribers) callback(elements, appState);
+      },
+      scrollToContent: vi.fn(),
+    };
+  };
 
   it("focuses the sidebar frame exactly once", async () => {
     const api = createApi();
@@ -117,19 +127,14 @@ describe("presentation controller", () => {
   });
 
   it("exits presentation if the active frame is deleted", async () => {
-    let emitSceneChange: ((elements: readonly unknown[]) => void) | undefined;
     const api = createApi();
-    api.onChange.mockImplementation((callback: (elements: readonly unknown[]) => void) => {
-      emitSceneChange = callback;
-      return () => {};
-    });
     render(<ExcaliMath excalidrawAPI={api} enabledPlugins={["slides"]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Toggle ExcaliMath panel" }));
     fireEvent.click(screen.getByRole("button", { name: "Present from first frame" }));
     await screen.findByRole("toolbar", { name: "Presentation controls" });
 
-    emitSceneChange?.([{ ...slides[0], isDeleted: true }, slides[1]]);
+    api.emitSceneChange?.([{ ...slides[0], isDeleted: true }, slides[1]], {});
     await waitFor(() => expect(screen.queryByRole("toolbar", { name: "Presentation controls" })).not.toBeInTheDocument());
   });
 });

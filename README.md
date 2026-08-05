@@ -20,7 +20,7 @@
 **ExcalidrawMathTypst** is an independent fork of [ExcaliMath](https://github.com/tamerUAE/excalimath) by the ExcaliMath contributors. It is an open-source companion plugin for [Excalidraw](https://excalidraw.com) that transforms it into a full-featured math whiteboard. It wraps — never forks — the `@excalidraw/excalidraw` React component, injecting three capability layers:
 
 1. **Equation Layer** — native Typst math authoring with live SVG preview and click-to-edit
-2. **Graph Layer** — Function plotting via Plotly.js with multi-function support and templates
+2. **Graph Layer** — Function plotting via Typst simple-plot with multi-function support, templates, zoom insets, and CSV data
 3. **Shape Libraries** — 80+ curriculum-aligned STEM shapes across 6 subject packs
 4. **Presentation** — move smoothly through native Excalidraw frames
 
@@ -151,8 +151,9 @@ excalimath/
 │           │   ├── roundTrip.ts        Async save/load restoration of equations + graphs
 │           │   └── types.ts            Shared type definitions
 │           ├── plugins/
-│           │   ├── equation/           Typst worker/compiler + expression library
-│           │   ├── graph/              Plotly renderer + mathjs evaluator + templates
+│           │   ├── equation/           Typst expression library + equation renderer
+│           │   ├── graph/              simple-plot renderer + mathjs evaluator + templates
+│           │   ├── typst/              Shared Typst compiler worker + SVG renderer
 │           │   └── geometry/           Shape library packs + registry
 │           └── ui/
 │               ├── ExcaliMath.tsx       Main wrapper (toolbar + sidebar + tab navigation)
@@ -169,7 +170,7 @@ excalimath/
 
 1. **Wrapper Shell** — `ExcaliMath` component injects a sidebar via Excalidraw's `renderTopRightUI` hook. A single toggle button opens a panel with tabbed navigation.
 2. **Plugin Modules** — Three independent modules (equation, graph, geometry), each independently loadable via the `enabledPlugins` prop.
-3. **Element Factory** — Converts rendered SVG (Typst equations / Plotly charts / SVG gate symbols) into Excalidraw `imageElement` objects with embedded data URLs.
+3. **Element Factory** — Converts rendered SVG (Typst equations / simple-plot charts / SVG gate symbols) into Excalidraw `imageElement` objects with embedded data URLs.
 4. **State Bridge** — Tags inserted elements with `customData` metadata to enable click-to-edit. When a user clicks an equation or graph, the metadata is read to restore the editor with the original settings.
 5. **Round-Trip** — Monitors the scene for ExcaliMath elements missing their SVG file data (e.g. after opening a saved file) and regenerates them from stored metadata.
 
@@ -178,7 +179,7 @@ excalimath/
 | Concern | Library | Why |
 |---------|---------|-----|
 | Equation rendering | Typst.ts 0.7 | Native Typst compilation to self-contained SVG in a Web Worker |
-| Graph plotting | Plotly.js (SVG mode) | Declarative, high-quality SVG; no canvas/WebGL dependency |
+| Graph plotting | Typst simple-plot | pgfplots-style function plotting rendered natively by Typst |
 | Function evaluation | mathjs | Safe expression parsing — never uses `eval()` |
 | Component framework | React 18 | Matches Excalidraw's own stack |
 | Build tooling | Vite + TypeScript (strict) | Fast HMR, clean ESM output for npm |
@@ -198,6 +199,7 @@ For desktop app scripts, see [apps/desktop/README.md](apps/desktop/README.md).
 ## Roadmap
 
 - [x] **v2.0** — Typst-native Equation Layer (worker compilation + live SVG preview + expression library)
+- [x] **v2.1** — Typst simple-plot Graph Layer (native function rendering, inline labels, zoom insets)
 - [x] **v0.2** — Graph Layer (Plotly + mathjs + templates + CSV data)
 - [x] **v0.3** — Shape Libraries (6 STEM packs, 80+ shapes, SVG logic gates)
 - [x] **v1.0** — Integration-Ready Release (component API, round-trip fidelity, AuthorKit spec)

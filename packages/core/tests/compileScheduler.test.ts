@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { TypstCompileScheduler } from "../src/plugins/equation/compileScheduler";
-import type { TypstCompileRequest } from "../src/plugins/equation/workerTypes";
+import { TypstCompileScheduler } from "../src/plugins/typst/compileScheduler";
+import type { TypstCompileRequest } from "../src/plugins/typst/workerTypes";
 
 function request(id: number, latestOnly = true): TypstCompileRequest {
   return { type: "compile", id, source: String(id), latestOnly };

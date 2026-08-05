@@ -6,6 +6,7 @@
  */
 
 import { evaluate, parse } from "mathjs";
+import { expressionToTypst } from "./expressionToTypst";
 
 /**
  * Safely evaluate a math expression for a range of x values using mathjs.
@@ -55,6 +56,8 @@ export function validateExpression(expression: string): string | null {
     parse(expression);
     // Try evaluating at x=0 to catch runtime errors
     evaluate(expression, { x: 0 });
+    // The expression must also map onto Typst (simple-plot) syntax.
+    expressionToTypst(expression);
     return null;
   } catch (err) {
     if (err instanceof Error) {

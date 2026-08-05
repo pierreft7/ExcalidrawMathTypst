@@ -76,6 +76,7 @@ export function ExcaliMath({
   );
   const slidesRef = useRef<SlideFrame[]>(slides);
   const editingElementIdRef = useRef<string | null>(null);
+  const lastSelectedElementIdRef = useRef<string | null>(null);
   // ── Theme resolution ──
   const excalidrawTheme = excalidrawAPI?.getAppState?.()?.theme;
   const isDark = theme === "auto"
@@ -102,6 +103,60 @@ export function ExcaliMath({
   useEffect(() => {
     slidesRef.current = slides;
   }, [slides]);
+
+  // ── Click-to-edit: follow the current selection ──
+  // When a single ExcaliMath element is selected, point the editor at it so
+  // "Update" replaces it in place instead of inserting a duplicate. Without
+  // this, selecting an element while the panel is already open would leave
+  // the panel in insert mode.
+  useEffect(() => {
+    if (!excalidrawAPI) return;
+    const followSelection = (elements: readonly any[], appState: any) => {
+      const selectedIds = appState?.selectedElementIds || {};
+      const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
+      const selectedId = ids.length === 1 ? ids[0] : null;
+
+      if (selectedId === lastSelectedElementIdRef.current) return;
+      lastSelectedElementIdRef.current = selectedId;
+
+      const selected = selectedId
+        ? elements.find((el: any) => el.id === selectedId)
+        : null;
+      const meta = selected?.customData as ExcalimathMetadata | undefined;
+
+      if (
+        graphEnabled &&
+        meta?.excalimath_type === "graph" &&
+        meta.excalimath_graph_config
+      ) {
+        try {
+          const parsed = JSON.parse(meta.excalimath_graph_config);
+          editingElementIdRef.current = selectedId;
+          setEditingGraphConfig(parsed);
+          if (isOpen) setActiveTab("graph");
+          return;
+        } catch {
+          /* malformed config — fall through and detach */
+        }
+      } else if (
+        equationEnabled &&
+        meta?.excalimath_type === "equation" &&
+        meta.excalimath_typst
+      ) {
+        editingElementIdRef.current = selectedId;
+        setEditingTypst(meta.excalimath_typst);
+        if (isOpen) setActiveTab("equation");
+        return;
+      }
+
+      // No (single) ExcaliMath element selected: detach the editor target.
+      // Panel content is preserved — the button simply flips back to "Insert".
+      editingElementIdRef.current = null;
+      setEditingGraphConfig(null);
+      setEditingTypst(null);
+    };
+    return excalidrawAPI.onChange(followSelection);
+  }, [excalidrawAPI, isOpen, graphEnabled, equationEnabled]);
 
   // ── Round-trip restore ──
   // Monitors scene elements and regenerates SVG files for any ExcaliMath
@@ -205,15 +260,36 @@ export function ExcaliMath({
         const x = existing?.x ?? 100;
         const y = existing?.y ?? 100;
 
+        // Use a fresh file ID, like the insert path. Reusing the old ID
+        // would make Excalidraw's addFiles invalidate the cache of the
+        // existing element and synchronously decode the (potentially large)
+        // SVG inside the click handler — slow and crash-prone. With a new
+        // ID the decode is deferred, and the orphaned old file is pruned by
+        // Excalidraw at save time (filterOutDeletedFiles).
         const { element, fileEntry, fileId } = createImageElement({
           svg, width, height, metadata, x, y,
         });
 
         knownFileIdsRef.current.add(fileId);
         excalidrawAPI.addFiles([fileEntry]);
+
+        // Replace in place, preserving the element's identity and any
+        // grouping/framing/locking the user applied to it.
         const updatedElements = elements.map((el: any) =>
           el.id === editingElementIdRef.current
-            ? { ...element, id: el.id }
+            ? {
+                ...element,
+                id: el.id,
+                angle: el.angle,
+                opacity: el.opacity,
+                groupIds: el.groupIds,
+                frameId: el.frameId,
+                boundElements: el.boundElements,
+                locked: el.locked,
+                link: el.link,
+                scale: el.scale,
+                index: el.index,
+              }
             : el
         );
         excalidrawAPI.updateScene({ elements: updatedElements });
@@ -238,7 +314,9 @@ export function ExcaliMath({
         });
       }
 
-      editingElementIdRef.current = null;
+      // Keep the editing target set so repeated "Update" clicks keep
+      // replacing the same element instead of inserting duplicates.
+      // It is cleared when the panel closes or the tab is switched.
       emitSave();
     },
     [excalidrawAPI, emitSave]
@@ -298,24 +376,26 @@ export function ExcaliMath({
 
   const handleInsertEquation = useCallback(
     (typst: string, svg: string, width: number, height: number) => {
+      const wasEditing = editingElementIdRef.current != null;
       upsertElement(svg, width, height, {
         excalimath_type: "equation",
         excalimath_source: "typst-equation-panel",
         excalimath_typst: typst,
       });
-      setEditingTypst(null);
+      if (!wasEditing) setEditingTypst(null);
     },
     [upsertElement]
   );
 
   const handleInsertGraph = useCallback(
     (config: GraphConfig, svg: string, width: number, height: number) => {
+      const wasEditing = editingElementIdRef.current != null;
       upsertElement(svg, width, height, {
         excalimath_type: "graph",
         excalimath_source: "graph-panel",
         excalimath_graph_config: JSON.stringify(config),
       });
-      setEditingGraphConfig(null);
+      if (!wasEditing) setEditingGraphConfig(null);
     },
     [upsertElement]
   );

@@ -36,8 +36,14 @@ export {
   validateExpression,
 } from "./plugins/graph/evaluator";
 export {
+  expressionToTypst,
+  expressionToTypstLambda,
+} from "./plugins/graph/expressionToTypst";
+export {
   renderGraphToSvg,
   parseCsvData,
+  buildGraphTypstDocument,
+  labelToTypstContent,
 } from "./plugins/graph/plotRenderer";
 export {
   plotTemplates,
@@ -83,6 +89,10 @@ export type {
   DataTrace,
   AxisConfig,
   GraphConfig,
+  ZoomSpec,
+  ZoomAt,
+  ZoomAtPreset,
+  LabelSide,
 } from "./plugins/graph/types";
 export type { PlotTemplate } from "./plugins/graph/templates";
 export type {

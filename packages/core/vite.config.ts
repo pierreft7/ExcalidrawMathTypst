@@ -21,7 +21,6 @@ export default defineConfig({
         "react/jsx-runtime",
         "@excalidraw/excalidraw",
         "mathjs",
-        "plotly.js-dist-min",
       ],
     },
   },

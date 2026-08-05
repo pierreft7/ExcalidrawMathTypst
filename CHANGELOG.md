@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Typst simple-plot graph rendering** — the graph plugin now renders through the native Typst compiler using the `simple-plot` package instead of Plotly.js.
+  - Math expressions (`x^2`, `sin(x)`, `sqrt(1 - x^2)`, ...) are translated to Typst lambdas automatically; domain-restricted functions produce proper curve gaps.
+  - Curve labels are drawn inline on the plot with configurable position (0–1) and side (above/below/left/right/...).
+  - Per-function options: stroke width, dashed strokes, sample count, and restricted domains.
+  - Axis options: per-axis tick steps, minor grid, axis position (center/bottom/left/hidden), origin label, end ticks, and tick label size.
+  - Spy-glass zoom insets (`zoom()`) with configurable region, position, magnification, lens shape, inset grid, and accent colour.
+  - `zoom` template demonstrating the spy-glass inset.
+- **Simplified zoom configuration** — the zoom inset now takes `center` (data coords), `size` (cm), `magnification`, and `at` placement (`"bottom-right"` presets or custom x/y data coords); legacy region-based zoom specs are converted automatically.
+- **Curve-coloured labels** — function and data-trace labels render in the same colour as their curve.
+
+### Changed
+- Fixed the plot background colour: the `style` dict (background, axis, label and tick colours) is now actually emitted; dark backgrounds get high-contrast grids, text and label backdrops.
+- The zoom inset's background now matches the plot background (`box-fill`), and is transparent when the plot background is transparent — previously the spy-glass inset always rendered a white box.
+- Updating a selected plot now replaces the existing element in place instead of inserting a duplicate — repeated "Update" clicks keep replacing the same element, the rotation angle is preserved, and the element's file entry is overwritten (no orphaned image data).
+- Selecting an existing plot/equation while the panel is open now targets it for editing, so "Update" replaces it (previously the panel stayed in insert mode and created duplicates).
+- Updating a plot is now as fast as inserting one: the updated element gets a fresh file ID, so Excalidraw defers the SVG decode instead of synchronously rasterising the image inside the click handler (which caused hangs and crashes on large plots). Orphaned file entries are pruned automatically at save time, and grouping/framing/locking applied to the element is preserved on update.
+- Fixed jagged function curves: function series now always sample over an explicit `domain` (the plotted range, like simple-plot's own `plot-fn` wrapper) instead of simple-plot's inflated sampling span, so `samples` maps 1:1 to visible curve segments and adapts to the plot width.
+- Shared Typst compilation infrastructure moved to `plugins/typst/` (worker client, artifact rendering, diagnostics) — used by both the equation and graph plugins.
+
+### Removed
+- Removed the Plotly.js dependency from `@excalimath/core`, the demo, and the desktop app.
+
 ## [2.0.0] - 2026-07-16
 
 ### Changed

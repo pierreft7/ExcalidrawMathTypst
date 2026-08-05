@@ -1,7 +1,7 @@
 /**
  * @module elementFactory
  *
- * Converts rendered SVG content (from Typst, Plotly, or inline SVG shapes)
+ * Converts rendered SVG content (from Typst or inline SVG shapes)
  * into Excalidraw-compatible `imageElement` objects with embedded data URLs.
  *
  * This is the bridge between plugin renderers and the Excalidraw canvas.
