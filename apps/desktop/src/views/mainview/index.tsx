@@ -24,7 +24,7 @@ function App() {
           excalidrawAPI ? (
             <ExcaliMath
               excalidrawAPI={excalidrawAPI}
-              enabledPlugins={["equation", "graph", "library"]}
+              enabledPlugins={["equation", "graph", "library", "slides"]}
               theme="auto"
               onSave={handleSave}
             />

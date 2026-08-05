@@ -54,6 +54,16 @@ export {
   searchShapes,
 } from "./plugins/geometry";
 export { LibraryPanel } from "./ui/LibraryPanel";
+export { PresentationMode, SlidesPanel } from "./ui/SlidesPanel";
+
+// ── Slides plugin ──
+export {
+  PRESENTATION_ORDER_KEY,
+  applySlideOrder,
+  getSlides,
+  getSlideLabel,
+  reorderSlideIds,
+} from "./plugins/slides";
 
 // ── Theme ──
 export { getTheme } from "./ui/theme";
@@ -84,3 +94,6 @@ export type { ExcaliMathProps, ExcalimathSceneData, ActiveTab } from "./ui/Excal
 export type { EquationPanelProps } from "./ui/EquationPanel";
 export type { GraphPanelProps } from "./ui/GraphPanel";
 export type { LibraryPanelProps } from "./ui/LibraryPanel";
+export type { SlidesPanelProps } from "./ui/SlidesPanel";
+export type { PresentationModeProps } from "./ui/SlidesPanel";
+export type { SlideFrame } from "./plugins/slides";

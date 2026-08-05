@@ -22,6 +22,7 @@
 1. **Equation Layer** — native Typst math authoring with live SVG preview and click-to-edit
 2. **Graph Layer** — Function plotting via Plotly.js with multi-function support and templates
 3. **Shape Libraries** — 80+ curriculum-aligned STEM shapes across 6 subject packs
+4. **Presentation** — move smoothly through native Excalidraw frames
 
 Built for students, teachers, and content authors. Available as a React component library (`@excalimath/core`) and as a standalone desktop app.
 
@@ -64,6 +65,12 @@ Version 2 is intentionally Typst-only. Scenes created with the former `excalimat
 - Native Windows/macOS/Linux app powered by [Electrobun](https://electrobun.dev)
 - All features work fully offline — no browser or internet required
 - Portable distribution (unzip and run)
+
+### Presentation
+- Draw frames with Excalidraw's native Frame tool; every frame is a slide
+- Frames start in creation order; drag them in the Presentation tab to persist the deck order in the drawing file
+- Present directly on the infinite canvas: each step smoothly focuses the next frame, preserving editable, live content
+- Navigate with arrow keys, Space, Page Up/Down, or the presentation controls; Esc exits
 
 ### Additional
 - Dark and light theme support (auto-detects from Excalidraw)
