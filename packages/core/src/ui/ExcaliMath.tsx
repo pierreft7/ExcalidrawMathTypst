@@ -496,6 +496,11 @@ export function ExcaliMath({
 
   return (
     <>
+      <style>{`
+        .excalidraw .HintViewer {
+          display: none !important;
+        }
+      `}</style>
       {/* ── Toolbar toggle button ── */}
       <button
         type="button"
