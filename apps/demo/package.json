@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.17.0",
+    "@excalidraw/excalidraw": "^0.18.1",
     "@excalimath/core": "*",
     "mathjs": "^15.1.1",
     "react": "^18.2.0",

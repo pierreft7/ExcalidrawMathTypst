@@ -14,7 +14,7 @@
     "package": "electrobun build && node scripts/package.cjs"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.17.6",
+    "@excalidraw/excalidraw": "^0.18.1",
     "electrobun": "^1.16.0",
     "mathjs": "^15.1.1",
     "react": "^18.3.1",
