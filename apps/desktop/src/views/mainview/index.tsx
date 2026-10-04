@@ -6,6 +6,7 @@
 import { StrictMode, useState, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
 import { ExcaliMath } from "@excalimath/core";
 import type { ExcalimathSceneData } from "@excalimath/core";
 

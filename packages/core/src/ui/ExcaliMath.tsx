@@ -8,7 +8,7 @@
  * - Round-trip fidelity: restores equations/graphs from saved files
  */
 
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect, memo } from "react";
 import { EquationPanel } from "./EquationPanel";
 import { GraphPanel } from "./GraphPanel";
 import { LibraryPanel } from "./LibraryPanel";
@@ -25,6 +25,18 @@ import type { LibraryShape } from "../plugins/geometry/types";
 import type { EquationRenderer } from "../plugins/equation/renderer";
 
 export type ActiveTab = "equation" | "graph" | "library" | "slides" | null;
+
+/** Detects if the user is in an active drawing, dragging, or resizing gesture */
+function isUserInteracting(appState: any): boolean {
+  if (!appState) return false;
+  return Boolean(
+    appState.cursorButton === "down" ||
+    appState.newElement != null ||
+    appState.selectedElementsAreBeingDragged ||
+    appState.resizingElement != null ||
+    appState.editingLinearElement != null
+  );
+}
 
 /** Serialisable scene data for save/load */
 export interface ExcalimathSceneData {
@@ -59,7 +71,7 @@ export interface ExcaliMathProps {
   renderEquation?: EquationRenderer;
 }
 
-export function ExcaliMath({
+export const ExcaliMath = memo(function ExcaliMath({
   excalidrawAPI,
   enabledPlugins = ["equation", "graph", "library", "slides"],
   theme = "auto",
@@ -77,6 +89,12 @@ export function ExcaliMath({
   const slidesRef = useRef<SlideFrame[]>(slides);
   const editingElementIdRef = useRef<string | null>(null);
   const lastSelectedElementIdRef = useRef<string | null>(null);
+
+  const activeTabRef = useRef<ActiveTab>(activeTab);
+  activeTabRef.current = activeTab;
+  const presentationFrameIdRef = useRef<string | null>(presentationFrameId);
+  presentationFrameIdRef.current = presentationFrameId;
+
   // ── Theme resolution ──
   const excalidrawTheme = excalidrawAPI?.getAppState?.()?.theme;
   const isDark = theme === "auto"
@@ -89,10 +107,17 @@ export function ExcaliMath({
   const libraryEnabled = enabledPlugins.includes("library");
   const slidesEnabled = enabledPlugins.includes("slides");
   const isOpen = activeTab !== null;
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
 
   useEffect(() => {
     if (!excalidrawAPI) return;
-    const updateSlides = (elements: readonly unknown[]) => {
+    const updateSlides = (elements: readonly unknown[], appState?: any) => {
+      // Never scan elements or dispatch state while drawing a stroke
+      if (isUserInteracting(appState)) return;
+      // If slides panel is not open and not presenting, avoid processing slides
+      if (activeTabRef.current !== "slides" && !presentationFrameIdRef.current) return;
+
       const next = getSlides(elements);
       setSlides((previous) => sameSlideDeck(previous, next) ? previous : next);
     };
@@ -112,6 +137,10 @@ export function ExcaliMath({
   useEffect(() => {
     if (!excalidrawAPI) return;
     const followSelection = (elements: readonly any[], appState: any) => {
+      // Never recompute selection while drawing a stroke
+      if (isUserInteracting(appState)) return;
+      if (!isOpenRef.current) return;
+
       const selectedIds = appState?.selectedElementIds || {};
       const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
       const selectedId = ids.length === 1 ? ids[0] : null;
@@ -133,7 +162,7 @@ export function ExcaliMath({
           const parsed = JSON.parse(meta.excalimath_graph_config);
           editingElementIdRef.current = selectedId;
           setEditingGraphConfig(parsed);
-          if (isOpen) setActiveTab("graph");
+          if (isOpenRef.current) setActiveTab("graph");
           return;
         } catch {
           /* malformed config — fall through and detach */
@@ -145,7 +174,7 @@ export function ExcaliMath({
       ) {
         editingElementIdRef.current = selectedId;
         setEditingTypst(meta.excalimath_typst);
-        if (isOpen) setActiveTab("equation");
+        if (isOpenRef.current) setActiveTab("equation");
         return;
       }
 
@@ -156,7 +185,7 @@ export function ExcaliMath({
       setEditingTypst(null);
     };
     return excalidrawAPI.onChange(followSelection);
-  }, [excalidrawAPI, isOpen, graphEnabled, equationEnabled]);
+  }, [excalidrawAPI, graphEnabled, equationEnabled]);
 
   // ── Round-trip restore ──
   // Monitors scene elements and regenerates SVG files for any ExcaliMath
@@ -170,6 +199,8 @@ export function ExcaliMath({
 
     const checkAndRestore = async () => {
       if (restoringRef.current) return;
+      const appState = excalidrawAPI.getAppState?.();
+      if (isUserInteracting(appState)) return;
 
       const elements = excalidrawAPI.getSceneElements();
       const files = excalidrawAPI.getFiles?.() || {};
@@ -211,7 +242,7 @@ export function ExcaliMath({
 
     // Check periodically for missing files (handles native open dialog)
     checkAndRestore();
-    const interval = setInterval(checkAndRestore, 1500);
+    const interval = setInterval(checkAndRestore, 4000);
     return () => clearInterval(interval);
   }, [excalidrawAPI]);
 
@@ -343,10 +374,16 @@ export function ExcaliMath({
         } catch { /* ignore */ }
         setActiveTab("graph");
       } else {
-        setActiveTab(equationEnabled ? "equation" : graphEnabled ? "graph" : libraryEnabled ? "library" : "slides");
+        const next = equationEnabled ? "equation" : graphEnabled ? "graph" : libraryEnabled ? "library" : "slides";
+        if (next === "slides") {
+          const current = excalidrawAPI?.getSceneElements?.() ?? [];
+          const nextSlides = getSlides(current);
+          setSlides((previous) => (sameSlideDeck(previous, nextSlides) ? previous : nextSlides));
+        }
+        setActiveTab(next);
       }
     }
-  }, [isOpen, getSelectedElement, equationEnabled, graphEnabled]);
+  }, [isOpen, getSelectedElement, equationEnabled, graphEnabled, libraryEnabled, excalidrawAPI]);
 
   const switchTab = useCallback((tab: ActiveTab) => {
     setEditingTypst(null);
@@ -367,10 +404,14 @@ export function ExcaliMath({
           editingElementIdRef.current = selected.data.elementId;
         } catch { /* ignore */ }
       }
+    } else if (tab === "slides") {
+      const current = excalidrawAPI?.getSceneElements?.() ?? [];
+      const nextSlides = getSlides(current);
+      setSlides((previous) => (sameSlideDeck(previous, nextSlides) ? previous : nextSlides));
     }
 
     setActiveTab(tab);
-  }, [getSelectedElement]);
+  }, [getSelectedElement, excalidrawAPI]);
 
   // ── Insert handlers ──
 
@@ -674,4 +715,5 @@ export function ExcaliMath({
       )}
     </>
   );
-}
+});
+
